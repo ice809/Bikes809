@@ -52,8 +52,8 @@ HTML_LAYOUT = """
             <div class="flex items-center gap-4">
                 <span class="text-[9px] text-zinc-600 font-mono hidden md:block uppercase tracking-widest italic">{{ t.high_fidelity_mode }}</span>
                 <div class="flex gap-2 ml-4 pl-4 border-l border-white/10">
-                    <a href="/cs{{ request.path.replace('/' + lang, '') }}" class="text-[9px] font-black uppercase px-2 py-1 rounded transition {% if lang == 'cs' %}bg-orange-600 text-black{% else %}text-zinc-600 hover:text-white{% endif %}">CZ</a>
-                    <a href="/en{{ request.path.replace('/' + lang, '') }}" class="text-[9px] font-black uppercase px-2 py-1 rounded transition {% if lang == 'en' %}bg-orange-600 text-black{% else %}text-zinc-600 hover:text-white{% endif %}">EN</a>
+                    <a href="/cs/" class="text-[9px] font-black uppercase px-2 py-1 rounded transition {% if lang == 'cs' %}bg-orange-600 text-black{% else %}text-zinc-600 hover:text-white{% endif %}">CZ</a>
+                    <a href="/en/" class="text-[9px] font-black uppercase px-2 py-1 rounded transition {% if lang == 'en' %}bg-orange-600 text-black{% else %}text-zinc-600 hover:text-white{% endif %}">EN</a>
                 </div>
             </div>
         </div>
