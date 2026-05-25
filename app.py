@@ -1,6 +1,7 @@
 import os
 import socket
-from flask import Flask, render_template_string, abort, send_from_directory
+from flask import Flask, render_template_string, abort, send_from_directory, redirect, url_for, request
+from translations import get_translations
 
 app = Flask(__name__)
 
@@ -28,7 +29,7 @@ def serve_image(filename):
 # Industrial Garage UI - Optimized for High Resolution
 HTML_LAYOUT = """
 <!DOCTYPE html>
-<html lang="cs" class="scroll-smooth">
+<html lang="{{ lang }}" class="scroll-smooth">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -44,13 +45,16 @@ HTML_LAYOUT = """
 <body>
     <nav class="sticky top-0 z-50 bg-black/95 border-b border-white/5 backdrop-blur-md p-4">
         <div class="max-w-screen-2xl mx-auto flex justify-between items-center px-4">
-            <a href="/" class="flex items-center gap-2">
+            <a href="/{{ lang }}/" class="flex items-center gap-2">
                 <div class="w-8 h-8 bg-orange-600 flex items-center justify-center font-black text-black italic text-xl">M</div>
-                <span class="text-xl font-black text-white uppercase italic tracking-tighter">MotoBase</span>
+                <span class="text-xl font-black text-white uppercase italic tracking-tighter">{{ t.motobase }}</span>
             </a>
             <div class="flex items-center gap-4">
-                <span class="text-[9px] text-zinc-600 font-mono hidden md:block uppercase tracking-widest italic">High Fidelity Mode: On</span>
-                <span class="text-[9px] text-zinc-700 font-mono hidden lg:block">{{ root_path }}</span>
+                <span class="text-[9px] text-zinc-600 font-mono hidden md:block uppercase tracking-widest italic">{{ t.high_fidelity_mode }}</span>
+                <div class="flex gap-2 ml-4 pl-4 border-l border-white/10">
+                    <a href="/cs{{ request.path.replace('/' + lang, '') }}" class="text-[9px] font-black uppercase px-2 py-1 rounded transition {% if lang == 'cs' %}bg-orange-600 text-black{% else %}text-zinc-600 hover:text-white{% endif %}">CZ</a>
+                    <a href="/en{{ request.path.replace('/' + lang, '') }}" class="text-[9px] font-black uppercase px-2 py-1 rounded transition {% if lang == 'en' %}bg-orange-600 text-black{% else %}text-zinc-600 hover:text-white{% endif %}">EN</a>
+                </div>
             </div>
         </div>
     </nav>
@@ -58,44 +62,58 @@ HTML_LAYOUT = """
         {% block content %}{% endblock %}
     </main>
     <footer class="p-12 text-center border-t border-white/5 mt-20">
-        <p class="text-[10px] uppercase tracking-[0.5em] text-zinc-800 font-bold italic">MotoBase High-Resolution Storage System</p>
+        <p class="text-[10px] uppercase tracking-[0.5em] text-zinc-800 font-bold italic">{{ t.moto_storage }}</p>
     </footer>
 </body>
 </html>
 """
 
 @app.route('/')
-def home():
+def root():
+    """Redirect root na /cs/ (výchozí jazyk)"""
+    return redirect('/cs/')
+
+@app.route('/<lang>/')
+def home(lang):
+    if lang not in ['cs', 'en']:
+        abort(404)
+    
+    t = get_translations(lang)
+    
     if not os.path.exists(GALLERY_ROOT):
-        return f"CHYBA: Cesta '{GALLERY_ROOT}' neexistuje. Zkontroluj písmeno disku a název složek."
+        return f"ERROR: Path '{GALLERY_ROOT}' does not exist."
     
     brands = sorted([d for d in os.listdir(GALLERY_ROOT) if os.path.isdir(os.path.join(GALLERY_ROOT, d)) and not d.startswith('.')])
     
     content = """
-    <h1 class="heading-font text-7xl md:text-9xl text-white uppercase italic mb-12 tracking-tighter opacity-90 leading-none">Garáž</h1>
+    <h1 class="heading-font text-7xl md:text-9xl text-white uppercase italic mb-12 tracking-tighter opacity-90 leading-none">{{ t.garaze }}</h1>
     
     {% if not brands %}
     <div class="bg-zinc-900 border border-white/5 p-8 text-center">
         <p class="text-orange-500 font-bold uppercase tracking-widest">Database Empty</p>
-        <p class="text-xs mt-2 italic text-zinc-600">No brands detected in {{ root_path }}</p>
+        <p class="text-xs mt-2 italic text-zinc-600">{{ t.no_brands }} {{ root_path }}</p>
     </div>
     {% else %}
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {% for brand in brands %}
-        <a href="/{{ brand }}" class="group bg-zinc-900/40 border border-white/5 p-16 flex flex-col items-center justify-center hover:border-orange-500 hover:bg-zinc-900 transition-all duration-500 relative overflow-hidden">
+        <a href="/{{ lang }}/{{ brand }}" class="group bg-zinc-900/40 border border-white/5 p-16 flex flex-col items-center justify-center hover:border-orange-500 hover:bg-zinc-900 transition-all duration-500 relative overflow-hidden">
             <div class="absolute top-0 left-0 w-1 h-0 bg-orange-600 group-hover:h-full transition-all duration-500"></div>
             <span class="text-5xl font-black uppercase italic group-hover:text-white transition z-10 tracking-tighter">{{ brand }}</span>
-            <div class="mt-4 text-[9px] font-bold text-zinc-700 uppercase tracking-widest opacity-0 group-hover:opacity-100 transition duration-500">Prozkoumat Archiv &rarr;</div>
+            <div class="mt-4 text-[9px] font-bold text-zinc-700 uppercase tracking-widest opacity-0 group-hover:opacity-100 transition duration-500">{{ t.explore_archive }} &rarr;</div>
         </a>
         {% endfor %}
     </div>
     {% endif %}
     """
     return render_template_string(HTML_LAYOUT.replace('{% block content %}{% endblock %}', content), 
-                                brands=brands, root_path=GALLERY_ROOT, title="Garáž")
+                                brands=brands, root_path=GALLERY_ROOT, title=t.garaze, t=t, lang=lang)
 
-@app.route('/<brand>')
-def brand_detail(brand):
+@app.route('/<lang>/<brand>')
+def brand_detail(lang, brand):
+    if lang not in ['cs', 'en']:
+        abort(404)
+    
+    t = get_translations(lang)
     brand_path = os.path.join(GALLERY_ROOT, brand)
     if not os.path.exists(brand_path): abort(404)
     
@@ -104,18 +122,18 @@ def brand_detail(brand):
 
     content = """
     <div class="mb-20">
-        <a href="/" class="text-zinc-600 hover:text-white text-[10px] uppercase tracking-widest font-black transition mb-4 inline-block">&larr; Zpět do garáže</a>
+        <a href="/{{ lang }}/" class="text-zinc-600 hover:text-white text-[10px] uppercase tracking-widest font-black transition mb-4 inline-block">&larr; {{ t.back_to_garage }}</a>
         <h1 class="text-8xl md:text-[10rem] font-black text-white uppercase italic tracking-tighter mt-4 leading-none">{{ brand }}</h1>
     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
         {% for model, cover in previews.items() %}
-        <a href="/{{ brand }}/{{ model }}" class="bg-zinc-900/20 border border-white/5 overflow-hidden hover:border-orange-600/50 transition group">
+        <a href="/{{ lang }}/{{ brand }}/{{ model }}" class="bg-zinc-900/20 border border-white/5 overflow-hidden hover:border-orange-600/50 transition group">
             <div class="aspect-video bg-black overflow-hidden grayscale group-hover:grayscale-0 transition duration-1000">
                 {% if cover %}
                 <img src="/media/{{ brand }}/{{ model }}/{{ cover }}" class="w-full h-full object-cover group-hover:scale-105 transition duration-1000">
                 {% else %}
-                <div class="w-full h-full flex items-center justify-center text-[10px] uppercase text-zinc-800 font-bold">No High-Res Data</div>
+                <div class="w-full h-full flex items-center justify-center text-[10px] uppercase text-zinc-800 font-bold">{{ t.no_high_res_data }}</div>
                 {% endif %}
             </div>
             <div class="p-8 flex justify-between items-center border-t border-white/5 bg-zinc-900/40">
@@ -129,10 +147,14 @@ def brand_detail(brand):
     </div>
     """
     return render_template_string(HTML_LAYOUT.replace('{% block content %}{% endblock %}', content), 
-                                brand=brand, models=models, previews=previews, title=brand)
+                                brand=brand, models=models, previews=previews, title=brand, t=t, lang=lang)
 
-@app.route('/<brand>/<model>')
-def model_gallery(brand, model):
+@app.route('/<lang>/<brand>/<model>')
+def model_gallery(lang, brand, model):
+    if lang not in ['cs', 'en']:
+        abort(404)
+    
+    t = get_translations(lang)
     model_path = os.path.join(GALLERY_ROOT, brand, model)
     photos = get_images(model_path)
     if not photos: abort(404)
@@ -140,14 +162,14 @@ def model_gallery(brand, model):
     content = """
     <div class="mb-24">
         <div class="flex gap-4 text-[10px] uppercase font-black tracking-[0.3em] text-zinc-600 mb-8 items-center">
-            <a href="/" class="hover:text-white transition">Garáž</a>
+            <a href="/{{ lang }}/" class="hover:text-white transition">{{ t.garaze }}</a>
             <span class="w-1 h-1 bg-zinc-800 rounded-full"></span>
-            <a href="/{{ brand }}" class="hover:text-white transition">{{ brand }}</a>
+            <a href="/{{ lang }}/{{ brand }}" class="hover:text-white transition">{{ brand }}</a>
         </div>
         <h1 class="text-7xl md:text-[8rem] font-black text-white uppercase italic tracking-tighter leading-none mb-4">{{ model.replace('-', ' ') }}</h1>
         <div class="flex items-center gap-6 mt-6">
             <div class="h-px w-12 bg-orange-600"></div>
-            <p class="text-orange-500 font-black uppercase tracking-[0.4em] text-xs">Archiv: {{ photos|length }} Snímků v plné kvalitě</p>
+            <p class="text-orange-500 font-black uppercase tracking-[0.4em] text-xs">{{ t.archive }}: {{ photos|length }} {{ t.shots_in_quality }}</p>
         </div>
     </div>
 
@@ -175,27 +197,27 @@ def model_gallery(brand, model):
                 <!-- Tlačítko pro skutečné maximální rozlišení -->
                 <div class="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition duration-300">
                     <a href="/media/{{ brand }}/{{ model }}/{{ photo }}" target="_blank" class="bg-black/80 backdrop-blur-md text-white text-[10px] font-black px-4 py-2 border border-white/20 hover:bg-orange-600 hover:border-orange-600 transition flex items-center gap-2">
-                        <span>OTEVŘÍT ORIGINÁL</span>
+                        <span>{{ t.open_original }}</span>
                         <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
                     </a>
                 </div>
             </div>
             <div class="mt-8 flex justify-between items-baseline px-2 border-b border-white/5 pb-6">
                 <span class="text-[10px] font-mono text-zinc-700 uppercase tracking-[0.4em] italic">{{ photo }}</span>
-                <span class="text-[10px] font-black text-zinc-900 uppercase tracking-widest">Master_Asset_{{ "%03d" | format(loop.index) }}</span>
+                <span class="text-[10px] font-black text-zinc-900 uppercase tracking-widest">{{ t.master_asset }}{{ "%03d" | format(loop.index) }}</span>
             </div>
         </div>
         {% endfor %}
     </div>
 
     <div class="mt-60 mb-20 text-center">
-        <a href="/{{ brand }}" class="inline-block border-2 border-white/5 px-20 py-8 text-[11px] font-black uppercase tracking-[0.6em] hover:bg-white hover:text-black transition-all duration-700">
-            Zpět na modely
+        <a href="/{{ lang }}/{{ brand }}" class="inline-block border-2 border-white/5 px-20 py-8 text-[11px] font-black uppercase tracking-[0.6em] hover:bg-white hover:text-black transition-all duration-700">
+            {{ t.back_on_models }}
         </a>
     </div>
     """
     return render_template_string(HTML_LAYOUT.replace('{% block content %}{% endblock %}', content), 
-                                brand=brand, model=model, photos=photos, title=model, root_path=GALLERY_ROOT)
+                                brand=brand, model=model, photos=photos, title=model, t=t, lang=lang)
 
 if __name__ == '__main__':
     # Automatické zjištění lokální IP adresy počítače
