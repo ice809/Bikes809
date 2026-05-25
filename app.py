@@ -65,8 +65,8 @@ HTML_LAYOUT = """
             <div class="flex items-center gap-4">
                 <span class="text-[9px] text-zinc-600 font-mono hidden md:block uppercase tracking-widest italic">{{ high_fidelity_mode }}</span>
                 <div class="flex gap-2 ml-4 pl-4 border-l border-white/10">
-                    <a href="/cs/" class="text-[9px] font-black uppercase px-2 py-1 rounded transition {% if lang == 'cs' %}bg-orange-600 text-black{% else %}text-zinc-600 hover:text-white{% endif %}">CZ</a>
-                    <a href="/en/" class="text-[9px] font-black uppercase px-2 py-1 rounded transition {% if lang == 'en' %}bg-orange-600 text-black{% else %}text-zinc-600 hover:text-white{% endif %}">EN</a>
+                    <a href="/cs{{ rest_path }}" class="text-[9px] font-black uppercase px-2 py-1 rounded transition {% if lang == 'cs' %}bg-orange-600 text-black{% else %}text-zinc-600 hover:text-white{% endif %}">CZ</a>
+                    <a href="/en{{ rest_path }}" class="text-[9px] font-black uppercase px-2 py-1 rounded transition {% if lang == 'en' %}bg-orange-600 text-black{% else %}text-zinc-600 hover:text-white{% endif %}">EN</a>
                 </div>
             </div>
         </div>
@@ -92,6 +92,7 @@ def home(lang):
         abort(404)
     
     t = get_translations(lang)
+    rest_path = '/'
     
     if not os.path.exists(GALLERY_ROOT):
         return f"ERROR: Path '{GALLERY_ROOT}' does not exist."
@@ -119,7 +120,7 @@ def home(lang):
     {% endif %}
     """
     return render_template_string(HTML_LAYOUT.replace('{% block content %}{% endblock %}', content), 
-                                brands=brands, root_path=GALLERY_ROOT, title=t['garaze'], lang=lang,
+                                brands=brands, root_path=GALLERY_ROOT, title=t['garaze'], lang=lang, rest_path=rest_path,
                                 motobase=t['motobase'], high_fidelity_mode=t['high_fidelity_mode'], 
                                 moto_storage=t['moto_storage'], garaze=t['garaze'], no_brands=t['no_brands'],
                                 explore_archive=t['explore_archive'])
@@ -130,6 +131,7 @@ def brand_detail(lang, brand):
         abort(404)
     
     t = get_translations(lang)
+    rest_path = f'/{brand}'
     brand_path = os.path.join(GALLERY_ROOT, brand)
     if not os.path.exists(brand_path): abort(404)
     
@@ -175,7 +177,7 @@ def brand_detail(lang, brand):
     </div>
     """
     return render_template_string(HTML_LAYOUT.replace('{% block content %}{% endblock %}', content), 
-                                brand=brand, models=models, previews=previews, descriptions=descriptions, title=brand, lang=lang,
+                                brand=brand, models=models, previews=previews, descriptions=descriptions, title=brand, lang=lang, rest_path=rest_path,
                                 motobase=t['motobase'], high_fidelity_mode=t['high_fidelity_mode'], 
                                 moto_storage=t['moto_storage'], back_to_garage=t['back_to_garage'],
                                 no_high_res_data=t['no_high_res_data'])
@@ -186,6 +188,7 @@ def model_gallery(lang, brand, model):
         abort(404)
     
     t = get_translations(lang)
+    rest_path = f'/{brand}/{model}'
     model_path = os.path.join(GALLERY_ROOT, brand, model)
     photos = get_images(model_path)
     if not photos: abort(404)
@@ -255,7 +258,7 @@ def model_gallery(lang, brand, model):
     </div>
     """
     return render_template_string(HTML_LAYOUT.replace('{% block content %}{% endblock %}', content), 
-                                brand=brand, model=model, photos=photos, description=description, title=model, lang=lang,
+                                brand=brand, model=model, photos=photos, description=description, title=model, lang=lang, rest_path=rest_path,
                                 motobase=t['motobase'], high_fidelity_mode=t['high_fidelity_mode'], 
                                 moto_storage=t['moto_storage'], garaze=t['garaze'], archive=t['archive'],
                                 shots_in_quality=t['shots_in_quality'], open_original=t['open_original'],
