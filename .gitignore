@@ -1,0 +1,46 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+*.egg-info/
+dist/
+build/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Uploads and Cache - Large Directories
+uploads/
+cache/
+*/cache/
+*/thumbs/
+
+# Backup Files
+*.backup
+*.bak
+*_backup
+
+# WordPress specific
+wp-content/uploads/
+wp-content/cache/
+
+# Node (if used)
+node_modules/
+package-lock.json
+yarn.lock
+
+# Environment
+.env
+.env.local
