@@ -1,5 +1,6 @@
 import os
 import socket
+import json
 from flask import Flask, render_template_string, abort, send_from_directory, redirect, url_for, request
 from translations import get_translations
 
@@ -20,6 +21,18 @@ def get_images(path):
         return sorted(files)
     except OSError:
         return []
+
+def get_description(path, lang='cs'):
+    """Čte description.json ze složky."""
+    desc_file = os.path.join(path, 'description.json')
+    if os.path.exists(desc_file):
+        try:
+            with open(desc_file, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+                return data.get(lang, data.get('cs', ''))
+        except:
+            return ''
+    return ''
 
 @app.route('/media/<path:filename>')
 def serve_image(filename):
@@ -121,7 +134,14 @@ def brand_detail(lang, brand):
     if not os.path.exists(brand_path): abort(404)
     
     models = sorted([d for d in os.listdir(brand_path) if os.path.isdir(os.path.join(brand_path, d)) and not d.startswith('.')])
-    previews = {m: (get_images(os.path.join(brand_path, m))[0] if get_images(os.path.join(brand_path, m)) else None) for m in models}
+    previews = {}
+    descriptions = {}
+    
+    for m in models:
+        model_dir = os.path.join(brand_path, m)
+        images = get_images(model_dir)
+        previews[m] = images[0] if images else None
+        descriptions[m] = get_description(model_dir, lang)
 
     content = """
     <div class="mb-20">
@@ -139,18 +159,23 @@ def brand_detail(lang, brand):
                 <div class="w-full h-full flex items-center justify-center text-[10px] uppercase text-zinc-800 font-bold">{{ no_high_res_data }}</div>
                 {% endif %}
             </div>
-            <div class="p-8 flex justify-between items-center border-t border-white/5 bg-zinc-900/40">
-                <h3 class="text-3xl font-black uppercase italic text-white tracking-tighter">{{ model.replace('-', ' ') }}</h3>
-                <div class="w-12 h-12 border border-white/10 flex items-center justify-center group-hover:bg-orange-600 group-hover:border-orange-600 transition-colors">
-                    <span class="text-white text-xl font-bold">&rarr;</span>
+            <div class="p-8 flex flex-col gap-4 border-t border-white/5 bg-zinc-900/40">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-3xl font-black uppercase italic text-white tracking-tighter">{{ model.replace('-', ' ') }}</h3>
+                    <div class="w-12 h-12 border border-white/10 flex items-center justify-center group-hover:bg-orange-600 group-hover:border-orange-600 transition-colors">
+                        <span class="text-white text-xl font-bold">&rarr;</span>
+                    </div>
                 </div>
+                {% if descriptions.get(model) %}
+                <p class="text-sm text-zinc-400 line-clamp-2">{{ descriptions.get(model) }}</p>
+                {% endif %}
             </div>
         </a>
         {% endfor %}
     </div>
     """
     return render_template_string(HTML_LAYOUT.replace('{% block content %}{% endblock %}', content), 
-                                brand=brand, models=models, previews=previews, title=brand, lang=lang,
+                                brand=brand, models=models, previews=previews, descriptions=descriptions, title=brand, lang=lang,
                                 motobase=t['motobase'], high_fidelity_mode=t['high_fidelity_mode'], 
                                 moto_storage=t['moto_storage'], back_to_garage=t['back_to_garage'],
                                 no_high_res_data=t['no_high_res_data'])
@@ -165,6 +190,8 @@ def model_gallery(lang, brand, model):
     photos = get_images(model_path)
     if not photos: abort(404)
     
+    description = get_description(model_path, lang)
+    
     content = """
     <div class="mb-24">
         <div class="flex gap-4 text-[10px] uppercase font-black tracking-[0.3em] text-zinc-600 mb-8 items-center">
@@ -177,6 +204,11 @@ def model_gallery(lang, brand, model):
             <div class="h-px w-12 bg-orange-600"></div>
             <p class="text-orange-500 font-black uppercase tracking-[0.4em] text-xs">{{ archive }}: {{ photos|length }} {{ shots_in_quality }}</p>
         </div>
+        {% if description %}
+        <div class="mt-8 p-6 bg-zinc-900/40 border border-white/5 rounded">
+            <p class="text-base leading-relaxed text-zinc-300">{{ description }}</p>
+        </div>
+        {% endif %}
     </div>
 
     <!-- Mřížka náhledů pro rychlou navigaci -->
@@ -223,7 +255,7 @@ def model_gallery(lang, brand, model):
     </div>
     """
     return render_template_string(HTML_LAYOUT.replace('{% block content %}{% endblock %}', content), 
-                                brand=brand, model=model, photos=photos, title=model, lang=lang,
+                                brand=brand, model=model, photos=photos, description=description, title=model, lang=lang,
                                 motobase=t['motobase'], high_fidelity_mode=t['high_fidelity_mode'], 
                                 moto_storage=t['moto_storage'], garaze=t['garaze'], archive=t['archive'],
                                 shots_in_quality=t['shots_in_quality'], open_original=t['open_original'],
