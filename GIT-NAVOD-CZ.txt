@@ -1,0 +1,296 @@
+═══════════════════════════════════════════════════════════════════════════════
+  GIT NÁVOD PRO DUMMIES - Bikes809 & Trading
+  Zpracoval: GitHub Copilot
+  Datum: 2026-05-25
+═══════════════════════════════════════════════════════════════════════════════
+
+📋 OBSAH:
+1. Instalace Git
+2. První nastavení
+3. Práce s projektem (klonování, commitování, pushování)
+4. Časti příkazy
+5. Příklady pro Bikes809 a Trading
+
+═══════════════════════════════════════════════════════════════════════════════
+1. INSTALACE GIT (Windows)
+═══════════════════════════════════════════════════════════════════════════════
+
+KROK 1: Stažení
+- Jdi na: https://git-scm.com/download/win
+- Klikni na nejnovější verzi (obvykle velké modré tlačítko)
+- Uloží se "Git-X.XX.X-64-bit.exe"
+
+KROK 2: Instalace
+- Dvojklik na "Git-X.XX.X-64-bit.exe"
+- Klikni "Next" (cca 8x)
+- Vše ponechej default (defaultní nastavení)
+- Na konci "Finish"
+- POČÍTAČ RESTARTUJ!
+
+KROK 3: Ověření
+- Otevři PowerShell (Start → napíšeš "powershell" → Enter)
+- Napíšeš: git --version
+- Měl by se zobrazit: "git version 2.XX.X..."
+
+✅ Pokud to jde → Git je nainstalovaný!
+
+═══════════════════════════════════════════════════════════════════════════════
+2. PRVNÍ NASTAVENÍ GIT
+═══════════════════════════════════════════════════════════════════════════════
+
+Otevři PowerShell a napíšeš (zkopíruj/vlož):
+
+git config --global user.name "Jan Vicher"
+git config --global user.email "jan.vicher@vivicta.com"
+
+Potom ověřit:
+git config --global --list
+
+Mělo by se zobrazit:
+user.name=Jan Vicher
+user.email=jan.vicher@vivicta.com
+
+✅ Hotovo!
+
+═══════════════════════════════════════════════════════════════════════════════
+3. PRÁCE S PROJEKTEM
+═══════════════════════════════════════════════════════════════════════════════
+
+─────────────────────────────────────────────────────────────────────────────
+A) STAŽENÍ PROJEKTU (prvně)
+─────────────────────────────────────────────────────────────────────────────
+
+PowerShell:
+cd d:\_dev
+git clone https://github.com/ice809/Bikes809.git
+
+To si stáhne celý projekt do: d:\_dev\Bikes809
+
+─────────────────────────────────────────────────────────────────────────────
+B) AKTUALIZACE (když chceš nejnovější verzi)
+─────────────────────────────────────────────────────────────────────────────
+
+PowerShell:
+cd d:\_dev\Bikes809
+git pull
+
+Stáhne nejnovější změny z GitHub.
+
+─────────────────────────────────────────────────────────────────────────────
+C) KONTROLA ZMĚN
+─────────────────────────────────────────────────────────────────────────────
+
+cd d:\_dev\Bikes809
+git status
+
+Ukazuje:
+- Jaké soubory se změnily (červeně - modified)
+- Jaké je nové (zelená - new)
+
+─────────────────────────────────────────────────────────────────────────────
+D) COMMIT (uložení změn lokálně)
+─────────────────────────────────────────────────────────────────────────────
+
+KROK 1: Přidej všechny soubory
+git add .
+
+KROK 2: Zapiš komentář (commit message)
+git commit -m "Popis toho co jsi změnil"
+
+Příklady:
+git commit -m "Update Jawa descriptions"
+git commit -m "Add new motorcycle photos"
+git commit -m "Fix typos in English translation"
+
+─────────────────────────────────────────────────────────────────────────────
+E) PUSH (nahrání na GitHub)
+─────────────────────────────────────────────────────────────────────────────
+
+git push
+
+To nahraješ změny na GitHub.
+⚡ RENDER AUTOMATICKY DEPLOYUJE! (za 1-2 minuty se změní web)
+
+─────────────────────────────────────────────────────────────────────────────
+F) KOMPLEXNÍ WORKFLOW
+─────────────────────────────────────────────────────────────────────────────
+
+cd d:\_dev\Bikes809          # Jdeme do projektu
+git pull                     # Stáhneme nejnovější
+[Uděláš změny v souborech]
+git status                   # Podíváme se co se změnilo
+git add .                    # Přidáme všechno
+git commit -m "Moje změny"   # Commitneme
+git push                     # Nahrajeme na GitHub
+
+✅ HOTOVO! Web se updatuje automaticky!
+
+═══════════════════════════════════════════════════════════════════════════════
+4. ČASTI PŘÍKAZY
+═══════════════════════════════════════════════════════════════════════════════
+
+NAVIGACE:
+cd d:\_dev\Bikes809         # Jdi do složky Bikes809
+cd ..                        # Jdi do parent složky
+ls                           # Vypiš seznam souborů
+pwd                          # Ukaž kde teď jsem
+
+GIT STATUS:
+git status                   # Podívej se co se změnilo
+git log --oneline            # Posílední commity
+git diff                     # Detailní změny
+
+GIT PRÁCE:
+git pull                     # Stáhni nejnovější
+git add .                    # Přidej všechny změny
+git add README.md            # Přidej konkrétní soubor
+git commit -m "Zpráva"       # Commitni
+git push                     # Pushni na GitHub
+git reset --hard HEAD        # Vrať se na poslední commit
+
+UNDO:
+git checkout README.md       # Vrat změny v souboru
+git reset HEAD~1             # Vrať poslední commit (změny jsou stále lokální)
+
+═══════════════════════════════════════════════════════════════════════════════
+5. PRAKTICKÉ PŘÍKLADY
+═══════════════════════════════════════════════════════════════════════════════
+
+─────────────────────────────────────────────────────────────────────────────
+PŘÍPAD 1: Změnit popis motocyklu (Bikes809)
+─────────────────────────────────────────────────────────────────────────────
+
+PowerShell:
+cd d:\_dev\Bikes809
+git pull                           # Stáhni nejnovější verzi
+
+[Otevřeš v editoru:
+d:\\_dev\Bikes809\static\gallery\Jawa\jawa-350-634-sidwcar\description.json
+Změníš text a uložíš]
+
+git status                         # Vidíš že je změněno
+git add .
+git commit -m "Update Jawa description"
+git push                           # Nahraješ
+
+✅ Web se updatuje za 1-2 minuty!
+
+─────────────────────────────────────────────────────────────────────────────
+PŘÍPAD 2: Přidat nové fotky (Bikes809)
+─────────────────────────────────────────────────────────────────────────────
+
+[Zkopíruješ fotky do:
+d:\\_dev\Bikes809\static\gallery\Aermacchi\1963...\]
+
+PowerShell:
+cd d:\_dev\Bikes809
+git add .
+git commit -m "Add new Aermacchi photos"
+git push
+
+✅ Fotky se zobrazí na webu!
+
+─────────────────────────────────────────────────────────────────────────────
+PŘÍPAD 3: Práce s Trading projektem
+─────────────────────────────────────────────────────────────────────────────
+
+PowerShell:
+cd d:\_dev\Trading
+git pull                           # Stáhni nejnovější
+
+[Uděláš změny v souborech]
+
+git status                         # Vidíš změny
+git add .
+git commit -m "Update trading logic"
+git push
+
+✅ Changes uploadované!
+
+─────────────────────────────────────────────────────────────────────────────
+PŘÍPAD 4: Pokud se couru (undo změny)
+─────────────────────────────────────────────────────────────────────────────
+
+cd d:\_dev\Bikes809
+
+# Vrátit změny v jednom souboru:
+git checkout README.md
+
+# Vrátit všechny změny na poslední commit:
+git reset --hard HEAD
+
+# Vrátit poslední commit (ale soubory zůstane změněné):
+git reset HEAD~1
+
+═══════════════════════════════════════════════════════════════════════════════
+6. REPOZITÁŘE
+═══════════════════════════════════════════════════════════════════════════════
+
+BIKES809:
+- GitHub: https://github.com/ice809/Bikes809
+- Live: https://bikes809.onrender.com
+- Lokální: d:\_dev\Bikes809
+- Klonování: git clone https://github.com/ice809/Bikes809.git
+
+TRADING:
+- GitHub: https://github.com/ice809/trading
+- Lokální: d:\_dev\Trading
+- Klonování: git clone https://github.com/ice809/trading.git
+
+═══════════════════════════════════════════════════════════════════════════════
+7. TIPS & TRICKS
+═══════════════════════════════════════════════════════════════════════════════
+
+✅ PSÁT DOBRÉ COMMIT MESSAGES:
+❌ "fix"
+✅ "Fix typo in Jawa description"
+
+✅ PUSHNOUT MALÝ KOUSEK:
+❌ Nezapomínej pushnout
+✅ Pushni hned po commitnu (auto-deploy!)
+
+✅ PULL PŘED PRACÍ:
+❌ Pracuješ na staré verzi
+✅ git pull → pak teprve pracuješ
+
+✅ KDYŽ NĚCO NEJDE:
+- git status → podívej se co se děje
+- git log --oneline → kdo to udělal
+- google řetězec erroru
+
+═══════════════════════════════════════════════════════════════════════════════
+8. CHEAT SHEET (COPY/PASTE)
+═══════════════════════════════════════════════════════════════════════════════
+
+# Stažení projektu:
+cd d:\_dev && git clone https://github.com/ice809/Bikes809.git
+
+# Update a commit:
+cd d:\_dev\Bikes809
+git pull
+[uděláš změny]
+git add .
+git commit -m "Popis"
+git push
+
+# Trading:
+cd d:\_dev\Trading
+git pull
+[uděláš změny]
+git add .
+git commit -m "Popis"
+git push
+
+═══════════════════════════════════════════════════════════════════════════════
+9. KONTAKT
+═══════════════════════════════════════════════════════════════════════════════
+
+GitHub: https://github.com/ice809
+Email: jan.vicher@vivicta.com
+Bikes809: https://bikes809.onrender.com
+
+═══════════════════════════════════════════════════════════════════════════════
+
+Vše jasné? Pusť se do toho! 💪🚀
+
+═══════════════════════════════════════════════════════════════════════════════
