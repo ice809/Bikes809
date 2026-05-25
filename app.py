@@ -6,7 +6,7 @@ app = Flask(__name__)
 
 # --- KONFIGURACE CESTY ---
 # Python teď míří přímo do složky, kde začínají značky (Suzuki, Yamaha atd.)
-GALLERY_ROOT = r'P:\24bikes\static\gallery' 
+GALLERY_ROOT = os.path.join(os.path.dirname(__file__), 'static', 'gallery') 
 
 def get_images(path):
     """Získá všechny obrázky ve složce."""
