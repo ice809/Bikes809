@@ -29,7 +29,8 @@ def get_description(path, lang='cs'):
         try:
             with open(desc_file, 'r', encoding='utf-8') as f:
                 data = json.load(f)
-                return data.get(lang, data.get('cs', ''))
+                value = data.get(lang, data.get('cs', ''))
+                return ''.join(value) if isinstance(value, list) else value
         except:
             return ''
     return ''
@@ -169,7 +170,7 @@ def brand_detail(lang, brand):
                     </div>
                 </div>
                 {% if descriptions.get(model) %}
-                <p class="text-sm text-zinc-400 line-clamp-2">{{ descriptions.get(model) }}</p>
+                <p class="text-sm text-zinc-400 line-clamp-2">{{ descriptions.get(model) | striptags }}</p>
                 {% endif %}
             </div>
         </a>
@@ -209,7 +210,7 @@ def model_gallery(lang, brand, model):
         </div>
         {% if description %}
         <div class="mt-8 p-6 bg-zinc-900/40 border border-white/5 rounded">
-            <p class="text-base leading-relaxed text-zinc-300">{{ description }}</p>
+            <div class="text-base leading-relaxed text-zinc-300">{{ description | safe }}</div>
         </div>
         {% endif %}
     </div>
