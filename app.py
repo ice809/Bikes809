@@ -133,12 +133,7 @@ def home(lang):
     brands = sorted([d for d in os.listdir(GALLERY_ROOT) if os.path.isdir(os.path.join(GALLERY_ROOT, d)) and not d.startswith('.')])
     
     content = """
-    <div class="flex justify-between items-start mb-12">
-        <h1 class="heading-font text-7xl md:text-9xl text-white uppercase italic tracking-tighter opacity-90 leading-none">{{ garaze }}</h1>
-        <a href="/{{ lang }}/stats" class="bg-orange-600 hover:bg-orange-700 text-black font-black px-6 py-3 text-sm uppercase tracking-wider transition">
-            📊 {{ pocitadlo }}: <span class="text-lg">{{ total_visits }}</span>
-        </a>
-    </div>
+    <h1 class="heading-font text-7xl md:text-9xl text-white uppercase italic mb-12 tracking-tighter opacity-90 leading-none">{{ garaze }}</h1>
     
     {% if not brands %}
     <div class="bg-zinc-900 border border-white/5 p-8 text-center">
@@ -146,7 +141,7 @@ def home(lang):
         <p class="text-xs mt-2 italic text-zinc-600">{{ no_brands }} {{ root_path }}</p>
     </div>
     {% else %}
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-24">
         {% for brand in brands %}
         <a href="/{{ lang }}/{{ brand }}" class="group bg-zinc-900/40 border border-white/5 p-16 flex flex-col items-center justify-center hover:border-orange-500 hover:bg-zinc-900 transition-all duration-500 relative overflow-hidden">
             <div class="absolute top-0 left-0 w-1 h-0 bg-orange-600 group-hover:h-full transition-all duration-500"></div>
@@ -154,6 +149,10 @@ def home(lang):
             <div class="mt-4 text-[9px] font-bold text-zinc-700 uppercase tracking-widest opacity-0 group-hover:opacity-100 transition duration-500">{{ explore_archive }} &rarr;</div>
         </a>
         {% endfor %}
+    </div>
+    
+    <div class="text-center text-zinc-600 text-xs uppercase tracking-widest italic py-8 border-t border-white/5">
+        📊 <a href="/{{ lang }}/stats" class="hover:text-zinc-400 transition">{{ pocitadlo }}: {{ total_visits }}</a>
     </div>
     {% endif %}
     """
