@@ -168,9 +168,11 @@ def home(lang):
 def brand_detail(lang, brand):
     if lang not in ['cs', 'en']:
         abort(404)
-        # Inkrementuj počítadlo
+    
+    # Inkrementuj počítadlo
     increment_visits()
-        t = get_translations(lang)
+    
+    t = get_translations(lang)
     rest_path = f'/{brand}'
     brand_path = os.path.join(GALLERY_ROOT, brand)
     if not os.path.exists(brand_path): abort(404)
