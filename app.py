@@ -192,7 +192,14 @@ def model_gallery(lang, brand, model):
     rest_path = f'/{brand}/{model}'
     model_path = os.path.join(GALLERY_ROOT, brand, model)
     photos = get_images(model_path)
-    if not photos: abort(404)
+    
+    # Kontrola na video.mp4
+    video = None
+    video_path = os.path.join(model_path, 'Video.mp4')
+    if os.path.exists(video_path):
+        video = 'Video.mp4'
+    
+    if not photos and not video: abort(404)
     
     description = get_description(model_path, lang)
     
@@ -211,6 +218,17 @@ def model_gallery(lang, brand, model):
         {% if description %}
         <div class="mt-8 p-6 bg-zinc-900/40 border border-white/5 rounded">
             <div class="text-base leading-relaxed text-zinc-300">{{ description | safe }}</div>
+        </div>
+        {% endif %}
+
+        {% if video %}
+        <div class="mt-16 mb-32">
+            <div class="relative bg-zinc-900 shadow-[0_0_100px_rgba(0,0,0,0.9)] border border-white/5 overflow-hidden">
+                <video controls class="w-full h-auto" style="max-height: 600px;">
+                    <source src="/media/{{ brand }}/{{ model }}/{{ video }}" type="video/mp4">
+                    Your browser does not support the video tag.
+                </video>
+            </div>
         </div>
         {% endif %}
     </div>
@@ -259,7 +277,7 @@ def model_gallery(lang, brand, model):
     </div>
     """
     return render_template_string(HTML_LAYOUT.replace('{% block content %}{% endblock %}', content), 
-                                brand=brand, model=model, photos=photos, description=description, title=model, lang=lang, rest_path=rest_path,
+                                brand=brand, model=model, photos=photos, video=video, description=description, title=model, lang=lang, rest_path=rest_path,
                                 motobase=t['motobase'], high_fidelity_mode=t['high_fidelity_mode'], 
                                 moto_storage=t['moto_storage'], garaze=t['garaze'], archive=t['archive'],
                                 shots_in_quality=t['shots_in_quality'], open_original=t['open_original'],
@@ -272,9 +290,9 @@ if __name__ == '__main__':
     
     print("\n" + "!"*60)
     print("  MAX-RESOLUTION MOTO GALLERY ENGINE")
-    print(f"  INTERNÍ: http://localhost:8080")
-    print(f"  EXTERNÍ: http://{local_ip}:8080")
+    print(f"  INTERNÍ: http://localhost:5000")
+    print(f"  EXTERNÍ: http://{local_ip}:5000")
     print("!"*60 + "\n")
 
     # host='0.0.0.0' umožní přístup z jiných zařízení v síti
-    app.run(debug=True, host='0.0.0.0', port=8080)
+    app.run(debug=True, host='0.0.0.0', port=5000)
