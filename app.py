@@ -21,9 +21,15 @@ def load_visits():
     return {}
 
 def save_visits(data):
-    """Uloží počty návštěv do souboru."""
+    """Uloží počty návštěv do souboru a commitne do gitu."""
     with open(VISITS_FILE, 'w', encoding='utf-8') as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
+    
+    # Auto-commit do gitu na pozadí (aspoň jednou za den)
+    try:
+        os.system('cd ' + os.path.dirname(__file__) + ' && git add visits.json && git commit -m "Auto-update visitor counter" --quiet && git push --quiet 2>/dev/null &')
+    except:
+        pass  # Git není dostupný, ignoruj
 
 def increment_visits():
     """Zvýší počítadlo pro dnešní den."""
