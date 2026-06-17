@@ -1,54 +1,10 @@
 import os
 import socket
 import json
-from datetime import datetime, timedelta
 from flask import Flask, render_template_string, abort, send_from_directory, redirect, url_for, request
 from translations import get_translations
 
 app = Flask(__name__)
-
-# --- KONFIGURACE POČÍTADLA ---
-VISITS_FILE = os.path.join(os.path.dirname(__file__), 'visits.json')
-
-def load_visits():
-    """Načte počty návštěv ze souboru."""
-    if os.path.exists(VISITS_FILE):
-        try:
-            with open(VISITS_FILE, 'r', encoding='utf-8') as f:
-                return json.load(f)
-        except:
-            return {}
-    return {}
-
-def save_visits(data):
-    """Uloží počty návštěv do souboru a commitne do gitu."""
-    with open(VISITS_FILE, 'w', encoding='utf-8') as f:
-        json.dump(data, f, ensure_ascii=False, indent=2)
-
-    # Auto-commit do gitu na pozadí
-    try:
-        repo_dir = os.path.dirname(__file__)
-        token = os.environ.get('GITHUB_TOKEN', '')
-        if token:
-            remote = f'https://ice809:{token}@github.com/ice809/Bikes809.git'
-            os.system(
-                f'cd {repo_dir} && '
-                f'git config user.email "auto@bikes809.com" && '
-                f'git config user.name "Bikes809 Bot" && '
-                f'git add visits.json && '
-                f'git diff --cached --quiet || git commit -m "Auto-update visitor counter" --quiet && '
-                f'git push {remote} HEAD:master --quiet 2>/dev/null &'
-            )
-    except:
-        pass
-
-def increment_visits():
-    """Zvýší počítadlo pro dnešní den."""
-    today = datetime.now().strftime('%Y-%m-%d')
-    visits = load_visits()
-    visits[today] = visits.get(today, 0) + 1
-    save_visits(visits)
-    return visits
 
 # --- KONFIGURACE CESTY ---
 # Python teď míří přímo do složky, kde začínají značky (Suzuki, Yamaha atd.)
@@ -136,11 +92,6 @@ def home(lang):
     if lang not in ['cs', 'en']:
         abort(404)
     
-    # Inkrementuj počítadlo návštěv
-    visits = increment_visits()
-    total_visits = sum(visits.values())
-    today_visits = visits.get(datetime.now().strftime('%Y-%m-%d'), 0)
-    
     t = get_translations(lang)
     rest_path = '/'
     
@@ -168,25 +119,18 @@ def home(lang):
         {% endfor %}
     </div>
     
-    <div class="text-center text-zinc-600 text-xs uppercase tracking-widest italic py-8 border-t border-white/5">
-        📊 <a href="/{{ lang }}/stats" class="hover:text-zinc-400 transition">{{ pocitadlo }}: {{ total_visits }}</a>
-    </div>
     {% endif %}
     """
-    return render_template_string(HTML_LAYOUT.replace('{% block content %}{% endblock %}', content), 
+    return render_template_string(HTML_LAYOUT.replace('{% block content %}{% endblock %}', content),
                                 brands=brands, root_path=GALLERY_ROOT, title=t['garaze'], lang=lang, rest_path=rest_path,
-                                motobase=t['motobase'], high_fidelity_mode=t['high_fidelity_mode'], 
+                                motobase=t['motobase'], high_fidelity_mode=t['high_fidelity_mode'],
                                 moto_storage=t['moto_storage'], garaze=t['garaze'], no_brands=t['no_brands'],
-                                explore_archive=t['explore_archive'], total_visits=total_visits, today_visits=today_visits,
-                                pocitadlo=t.get('pocitadlo', 'Počítadlo'))
+                                explore_archive=t['explore_archive'])
 
 @app.route('/<lang>/<brand>')
 def brand_detail(lang, brand):
     if lang not in ['cs', 'en']:
         abort(404)
-    
-    # Inkrementuj počítadlo
-    increment_visits()
     
     t = get_translations(lang)
     rest_path = f'/{brand}'
@@ -244,9 +188,6 @@ def brand_detail(lang, brand):
 def model_gallery(lang, brand, model):
     if lang not in ['cs', 'en']:
         abort(404)
-    
-    # Inkrementuj počítadlo
-    increment_visits()
     
     t = get_translations(lang)
     rest_path = f'/{brand}/{model}'
@@ -342,241 +283,6 @@ def model_gallery(lang, brand, model):
                                 moto_storage=t['moto_storage'], garaze=t['garaze'], archive=t['archive'],
                                 shots_in_quality=t['shots_in_quality'], open_original=t['open_original'],
                                 master_asset=t['master_asset'], back_on_models=t['back_on_models'])
-
-@app.route('/<lang>/stats')
-def statistics(lang):
-    if lang not in ['cs', 'en']:
-        abort(404)
-    
-    t = get_translations(lang)
-    rest_path = '/stats'
-    
-    visits = load_visits()
-    if not visits:
-        visits = {datetime.now().strftime('%Y-%m-%d'): 0}
-    
-    # Příprava dat
-    today = datetime.now().strftime('%Y-%m-%d')
-    today_visits = visits.get(today, 0)
-    total_visits = sum(visits.values())
-    
-    # Posledních 30 dní
-    last_30_days = {}
-    for i in range(30):
-        date = (datetime.now() - timedelta(days=i)).strftime('%Y-%m-%d')
-        last_30_days[date] = visits.get(date, 0)
-    
-    # Posledních 7 dní
-    last_7_days = {}
-    for i in range(7):
-        date = (datetime.now() - timedelta(days=i)).strftime('%Y-%m-%d')
-        last_7_days[date] = visits.get(date, 0)
-    
-    # Týdenní agregace (posledních 12 týdnů)
-    weekly_data = {}
-    for i in range(12):
-        week_start = datetime.now() - timedelta(days=7*i)
-        week_key = f"W{week_start.strftime('%U')}"
-        week_visits = 0
-        for j in range(7):
-            date = (week_start - timedelta(days=j)).strftime('%Y-%m-%d')
-            week_visits += visits.get(date, 0)
-        weekly_data[week_key] = week_visits
-    
-    # Měsíční agregace
-    monthly_data = {}
-    for i in range(12):
-        month_start = datetime.now() - timedelta(days=30*i)
-        month_key = month_start.strftime('%Y-%m')
-        month_visits = 0
-        for j in range(30):
-            date = (month_start - timedelta(days=j)).strftime('%Y-%m-%d')
-            month_visits += visits.get(date, 0)
-        monthly_data[month_key] = month_visits
-    
-    content = """
-    <div class="mb-12">
-        <a href="/{{ lang }}/" class="text-zinc-600 hover:text-white text-xs uppercase tracking-widest font-black transition mb-4 inline-block">&larr; {{ back }}</a>
-        <h1 class="text-6xl md:text-8xl font-black text-white uppercase italic tracking-tighter mt-4 leading-none">{{ statistika }}</h1>
-    </div>
-    
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16">
-        <div class="bg-zinc-900/40 border border-white/5 p-8 rounded">
-            <div class="text-zinc-400 text-xs uppercase tracking-widest mb-2">{{ dnes }}</div>
-            <div class="text-5xl font-black text-orange-500">{{ today_visits }}</div>
-        </div>
-        <div class="bg-zinc-900/40 border border-white/5 p-8 rounded">
-            <div class="text-zinc-400 text-xs uppercase tracking-widest mb-2">{{ tyzden }}</div>
-            <div class="text-5xl font-black text-orange-500">{{ week_visits }}</div>
-        </div>
-        <div class="bg-zinc-900/40 border border-white/5 p-8 rounded">
-            <div class="text-zinc-400 text-xs uppercase tracking-widest mb-2">{{ celkem }}</div>
-            <div class="text-5xl font-black text-orange-500">{{ total_visits }}</div>
-        </div>
-    </div>
-    
-    <div class="space-y-16">
-        <div class="bg-zinc-900/40 border border-white/5 p-8 rounded">
-            <h2 class="text-2xl font-black uppercase tracking-tighter mb-6">📈 {{ poslednych_7_dni }}</h2>
-            <canvas id="chart7days" height="80"></canvas>
-        </div>
-        
-        <div class="bg-zinc-900/40 border border-white/5 p-8 rounded">
-            <h2 class="text-2xl font-black uppercase tracking-tighter mb-6">📊 {{ poslednych_30_dni }}</h2>
-            <canvas id="chart30days" height="60"></canvas>
-        </div>
-        
-        <div class="bg-zinc-900/40 border border-white/5 p-8 rounded">
-            <h2 class="text-2xl font-black uppercase tracking-tighter mb-6">📅 {{ tydny }}</h2>
-            <canvas id="chartWeekly" height="60"></canvas>
-        </div>
-        
-        <div class="bg-zinc-900/40 border border-white/5 p-8 rounded">
-            <h2 class="text-2xl font-black uppercase tracking-tighter mb-6">🗓️ {{ mesice }}</h2>
-            <canvas id="chartMonthly" height="60"></canvas>
-        </div>
-    </div>
-    
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script>
-        // 7 dní
-        const ctx7 = document.getElementById('chart7days').getContext('2d');
-        new Chart(ctx7, {
-            type: 'line',
-            data: {
-                labels: {{ labels_7days | tojson }},
-                datasets: [{
-                    label: '{{ navstev }}',
-                    data: {{ data_7days | tojson }},
-                    borderColor: '#ea580c',
-                    backgroundColor: 'rgba(234, 88, 12, 0.1)',
-                    tension: 0.4,
-                    fill: true
-                }]
-            },
-            options: {
-                responsive: true,
-                plugins: { legend: { display: false } },
-                scales: {
-                    y: { beginAtZero: true, ticks: { color: '#a1a1a1' }, grid: { color: '#27272a' } },
-                    x: { ticks: { color: '#a1a1a1' }, grid: { color: '#27272a' } }
-                }
-            }
-        });
-        
-        // 30 dní
-        const ctx30 = document.getElementById('chart30days').getContext('2d');
-        new Chart(ctx30, {
-            type: 'bar',
-            data: {
-                labels: {{ labels_30days | tojson }},
-                datasets: [{
-                    label: '{{ navstev }}',
-                    data: {{ data_30days | tojson }},
-                    backgroundColor: '#ea580c'
-                }]
-            },
-            options: {
-                responsive: true,
-                plugins: { legend: { display: false } },
-                scales: {
-                    y: { beginAtZero: true, ticks: { color: '#a1a1a1' }, grid: { color: '#27272a' } },
-                    x: { ticks: { color: '#a1a1a1' }, grid: { color: '#27272a' } }
-                }
-            }
-        });
-        
-        // Týdny
-        const ctxWeekly = document.getElementById('chartWeekly').getContext('2d');
-        new Chart(ctxWeekly, {
-            type: 'line',
-            data: {
-                labels: {{ labels_weekly | tojson }},
-                datasets: [{
-                    label: '{{ navstev }}',
-                    data: {{ data_weekly | tojson }},
-                    borderColor: '#ea580c',
-                    backgroundColor: 'rgba(234, 88, 12, 0.1)',
-                    tension: 0.4,
-                    fill: true
-                }]
-            },
-            options: {
-                responsive: true,
-                plugins: { legend: { display: false } },
-                scales: {
-                    y: { beginAtZero: true, ticks: { color: '#a1a1a1' }, grid: { color: '#27272a' } },
-                    x: { ticks: { color: '#a1a1a1' }, grid: { color: '#27272a' } }
-                }
-            }
-        });
-        
-        // Měsíce
-        const ctxMonthly = document.getElementById('chartMonthly').getContext('2d');
-        new Chart(ctxMonthly, {
-            type: 'doughnut',
-            data: {
-                labels: {{ labels_monthly | tojson }},
-                datasets: [{
-                    data: {{ data_monthly | tojson }},
-                    backgroundColor: ['#ea580c', '#f97316', '#fb923c', '#fed7aa', '#fef3c7', '#fef08a', '#bfdbfe', '#93c5fd', '#60a5fa', '#3b82f6', '#1d4ed8', '#1e40af']
-                }]
-            },
-            options: {
-                responsive: true,
-                plugins: { legend: { labels: { color: '#a1a1a1' } } }
-            }
-        });
-    </script>
-    
-    <div class="mt-16 text-center">
-        <a href="/{{ lang }}/" class="inline-block border-2 border-white/5 px-20 py-8 text-xs font-black uppercase tracking-[0.2em] hover:bg-white hover:text-black transition-all duration-700">
-            {{ zpatky }}
-        </a>
-    </div>
-    """
-    
-    # Příprava dat pro Jinja
-    labels_7days = list(reversed(list(last_7_days.keys())))
-    data_7days = list(reversed(list(last_7_days.values())))
-    
-    labels_30days = list(reversed(list(last_30_days.keys())))
-    data_30days = list(reversed(list(last_30_days.values())))
-    
-    labels_weekly = list(reversed(list(weekly_data.keys())))
-    data_weekly = list(reversed(list(weekly_data.values())))
-    
-    labels_monthly = list(reversed(list(monthly_data.keys())))
-    data_monthly = list(reversed(list(monthly_data.values())))
-    
-    week_visits = sum(last_7_days.values())
-    
-    return render_template_string(HTML_LAYOUT.replace('{% block content %}{% endblock %}', content),
-                                title=t['statistika'], lang=lang, rest_path=rest_path,
-                                motobase=t['motobase'], high_fidelity_mode=t['high_fidelity_mode'],
-                                moto_storage=t['moto_storage'],
-                                statistika=t.get('statistika', 'Statistika'),
-                                back=t.get('back', 'Zpět'),
-                                dnes=t.get('dnes', 'Dnes'),
-                                tyzden=t.get('tyzden', 'Týden'),
-                                celkem=t.get('celkem', 'Celkem'),
-                                poslednych_7_dni=t.get('poslednych_7_dni', 'Posledních 7 dní'),
-                                poslednych_30_dni=t.get('poslednych_30_dni', 'Posledních 30 dní'),
-                                tydny=t.get('tydny', 'Týdny'),
-                                mesice=t.get('mesice', 'Měsíce'),
-                                navstev=t.get('navstev', 'Návštěv'),
-                                zpatky=t.get('zpatky', 'Zpět na galárii'),
-                                today_visits=today_visits,
-                                week_visits=week_visits,
-                                total_visits=total_visits,
-                                labels_7days=labels_7days,
-                                data_7days=data_7days,
-                                labels_30days=labels_30days,
-                                data_30days=data_30days,
-                                labels_weekly=labels_weekly,
-                                data_weekly=data_weekly,
-                                labels_monthly=labels_monthly,
-                                data_monthly=data_monthly)
 
 if __name__ == '__main__':
     # Automatické zjištění lokální IP adresy počítače
