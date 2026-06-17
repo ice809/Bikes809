@@ -24,12 +24,23 @@ def save_visits(data):
     """Uloží počty návštěv do souboru a commitne do gitu."""
     with open(VISITS_FILE, 'w', encoding='utf-8') as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
-    
-    # Auto-commit do gitu na pozadí (aspoň jednou za den)
+
+    # Auto-commit do gitu na pozadí
     try:
-        os.system('cd ' + os.path.dirname(__file__) + ' && git add visits.json && git commit -m "Auto-update visitor counter" --quiet && git push --quiet 2>/dev/null &')
+        repo_dir = os.path.dirname(__file__)
+        token = os.environ.get('GITHUB_TOKEN', '')
+        if token:
+            remote = f'https://ice809:{token}@github.com/ice809/Bikes809.git'
+            os.system(
+                f'cd {repo_dir} && '
+                f'git config user.email "auto@bikes809.com" && '
+                f'git config user.name "Bikes809 Bot" && '
+                f'git add visits.json && '
+                f'git diff --cached --quiet || git commit -m "Auto-update visitor counter" --quiet && '
+                f'git push {remote} HEAD:master --quiet 2>/dev/null &'
+            )
     except:
-        pass  # Git není dostupný, ignoruj
+        pass
 
 def increment_visits():
     """Zvýší počítadlo pro dnešní den."""
