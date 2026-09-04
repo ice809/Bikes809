@@ -1,6 +1,7 @@
 import os
 import socket
 import json
+import mimetypes
 from flask import Flask, render_template_string, abort, send_from_directory, redirect, url_for, request
 from translations import get_translations
 
@@ -19,6 +20,23 @@ def get_images(path):
         # Bere i soubory s velkými příponami (.JPG)
         files = [f for f in os.listdir(path) if f.lower().endswith(valid_exts) and not f.startswith('.')]
         return sorted(files)
+    except OSError:
+        return []
+
+def get_videos(path):
+    """Získá všechna videa ve složce v pořadí za fotografiemi."""
+    valid_exts = ('.mp4', '.mkv', '.webm', '.mov', '.avi')
+    if not os.path.exists(path):
+        return []
+    try:
+        files = [f for f in os.listdir(path) if f.lower().endswith(valid_exts) and not f.startswith('.')]
+        return [
+            {
+                'name': filename,
+                'type': mimetypes.guess_type(filename)[0] or 'video/mp4'
+            }
+            for filename in sorted(files)
+        ]
     except OSError:
         return []
 
@@ -193,14 +211,9 @@ def model_gallery(lang, brand, model):
     rest_path = f'/{brand}/{model}'
     model_path = os.path.join(GALLERY_ROOT, brand, model)
     photos = get_images(model_path)
+    videos = get_videos(model_path)
     
-    # Kontrola na video.mp4
-    video = None
-    video_path = os.path.join(model_path, 'Video.mp4')
-    if os.path.exists(video_path):
-        video = 'Video.mp4'
-    
-    if not photos and not video: abort(404)
+    if not photos and not videos: abort(404)
     
     description = get_description(model_path, lang)
     
@@ -222,16 +235,6 @@ def model_gallery(lang, brand, model):
         </div>
         {% endif %}
 
-        {% if video %}
-        <div class="mt-16 mb-32">
-            <div class="relative bg-zinc-900 shadow-[0_0_100px_rgba(0,0,0,0.9)] border border-white/5 overflow-hidden">
-                <video controls class="w-full h-auto" style="max-height: 600px;">
-                    <source src="/media/{{ brand }}/{{ model }}/{{ video }}" type="video/mp4">
-                    Your browser does not support the video tag.
-                </video>
-            </div>
-        </div>
-        {% endif %}
     </div>
 
     <!-- Mřížka náhledů pro rychlou navigaci -->
@@ -271,6 +274,17 @@ def model_gallery(lang, brand, model):
         {% endfor %}
     </div>
 
+    {% for video in videos %}
+    <div class="mt-16 mb-32">
+        <div class="relative bg-zinc-900 shadow-[0_0_100px_rgba(0,0,0,0.9)] border border-white/5 overflow-hidden">
+            <video controls class="w-full h-auto" style="max-height: 600px;">
+                <source src="/media/{{ brand }}/{{ model }}/{{ video.name }}" type="{{ video.type }}">
+                Your browser does not support the video tag.
+            </video>
+        </div>
+    </div>
+    {% endfor %}
+
     <div class="mt-60 mb-20 text-center">
         <a href="/{{ lang }}/{{ brand }}" class="inline-block border-2 border-white/5 px-20 py-8 text-[11px] font-black uppercase tracking-[0.6em] hover:bg-white hover:text-black transition-all duration-700">
             {{ back_on_models }}
@@ -278,7 +292,7 @@ def model_gallery(lang, brand, model):
     </div>
     """
     return render_template_string(HTML_LAYOUT.replace('{% block content %}{% endblock %}', content), 
-                                brand=brand, model=model, photos=photos, video=video, description=description, title=model, lang=lang, rest_path=rest_path,
+                                brand=brand, model=model, photos=photos, videos=videos, description=description, title=model, lang=lang, rest_path=rest_path,
                                 motobase=t['motobase'], high_fidelity_mode=t['high_fidelity_mode'], 
                                 moto_storage=t['moto_storage'], garaze=t['garaze'], archive=t['archive'],
                                 shots_in_quality=t['shots_in_quality'], open_original=t['open_original'],
